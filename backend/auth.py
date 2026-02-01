@@ -1,8 +1,8 @@
 import jwt
-import datetime
 import os
 from functools import wraps
 from flask import request, jsonify
+from datetime import datetime, timezone, timedelta
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev_secret")
 
@@ -10,7 +10,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev_secret")
 def generate_token(user_id):
     payload = {
         "user_id": user_id,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1),
+        "exp": datetime.now(timezone.utc) + timedelta(days=1),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 

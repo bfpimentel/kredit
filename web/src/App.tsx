@@ -1,14 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "./auth-context";
-import Layout from "./layout";
-import LoginPage from "./pages/login";
-import CategoriesPage from "./pages/categories";
-import ImportPage from "./pages/import";
-import { useState, useEffect } from "react";
-import { api } from "./api";
+import { AuthProvider, useAuth } from "@/auth-context";
+import Layout from "@/layout";
+import LoginPage from "@/pages/login";
+import CategoriesPage from "@/pages/categories";
+import ImportPage from "@/pages/import";
+import { useState, useEffect, type ReactElement } from "react";
+import { api } from "@/api";
 import { cn } from "@/lib/utils";
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: ReactElement }) {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
@@ -45,9 +45,7 @@ function Dashboard() {
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       <div className="p-6 border rounded-lg shadow-md bg-white">
         <h2 className="text-xl font-semibold mb-2 text-gray-800">System Status</h2>
-        <p className={cn("text-gray-600", loading && "opacity-50")}>
-          {message || "Checking..."}
-        </p>
+        <p className={cn("text-gray-600", loading && "opacity-50")}>{message || "Checking..."}</p>
       </div>
     </div>
   );
@@ -59,8 +57,15 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="import" element={<ImportPage />} />

@@ -1,17 +1,15 @@
+import os
+import auth
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import db_session, init_db
 from models import User, Category, Invoice
-import auth
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
+
+load_dotenv()
 
 app = Flask(__name__)
-# Enable CORS for frontend
 CORS(
     app,
     resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}},
@@ -24,13 +22,12 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 
-# Init DB on start
 @app.before_request
 def initialize():
     if not getattr(app, "db_initialized", False):
         try:
             init_db()
-            app.db_initialized = True
+            setattr(app, "db_initialized", True)
             print("Database initialized successfully.")
         except Exception as e:
             print(f"Error initializing database: {e}")

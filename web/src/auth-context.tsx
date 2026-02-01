@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, type ReactElement } from "react";
-import { api } from "./api";
 
 interface AuthContextType {
   token: string | null;

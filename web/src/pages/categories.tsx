@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { api } from '../api';
+import { useState, useEffect } from "react";
+import { api } from "@/api";
 
 interface Category {
   id: number;
@@ -8,7 +8,7 @@ interface Category {
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,10 +17,10 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/api/categories');
+      const response = await api.get("/api/categories");
       setCategories(response.data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     } finally {
       setLoading(false);
     }
@@ -31,18 +31,18 @@ export default function CategoriesPage() {
     if (!newCategory.trim()) return;
 
     try {
-      const response = await api.post('/api/categories', { name: newCategory });
+      const response = await api.post("/api/categories", { name: newCategory });
       setCategories([...categories, response.data]);
-      setNewCategory('');
+      setNewCategory("");
     } catch (error) {
-      console.error('Error adding category:', error);
+      console.error("Error adding category:", error);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Categories</h1>
-      
+
       <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
         <form onSubmit={handleAddCategory} className="flex gap-4">
           <input

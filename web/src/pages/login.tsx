@@ -1,6 +1,6 @@
 import { useState, type SubmitEvent } from "react";
-import { useAuth } from "../auth-context";
-import { api } from "../api";
+import { useAuth } from "@/auth-context";
+import { api } from "@/api";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {

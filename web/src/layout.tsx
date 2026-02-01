@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "./auth-context";
+import { useAuth } from "@/auth-context";
 import { LayoutDashboard, List, Upload, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
