@@ -1,6 +1,5 @@
 import { format } from "date-fns";
-import { Check, X } from "lucide-react";
-
+import { ArrowDown, ArrowUp, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "@/api";
@@ -18,14 +17,22 @@ interface Category {
   name: string;
 }
 
+type SortField = "date" | "name" | "category_name" | "amount";
+type SortDirection = "asc" | "desc";
+
 export default function SpendingsPage() {
   const [spendings, setSpendings] = useState<Spending[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
 
+  // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCategory, setBulkCategory] = useState("");
+
+  // Sorting State
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   useEffect(() => {
     fetchData();
@@ -76,7 +83,9 @@ export default function SpendingsPage() {
       });
 
       // Optimistic Update
-      setSpendings((prev) => prev.map((s) => (selectedIds.has(s.id) ? { ...s, category_name: bulkCategory } : s)));
+      setSpendings((prev) =>
+        prev.map((s) => (selectedIds.has(s.id) ? { ...s, category_name: bulkCategory } : s))
+      );
 
       // Reset
       setSelectedIds(new Set());
@@ -87,8 +96,34 @@ export default function SpendingsPage() {
     }
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedSpendings = [...spendings].sort((a, b) => {
+    let result = 0;
+    if (sortField === "amount") {
+      result = a.amount - b.amount;
+    } else if (sortField === "date") {
+      result = new Date(a.date).getTime() - new Date(b.date).getTime();
+    } else {
+      result = (a[sortField] || "").toString().localeCompare((b[sortField] || "").toString());
+    }
+    return sortDirection === "asc" ? result : -result;
+  });
+
   const totalAmount = spendings.reduce((sum, s) => sum + s.amount, 0);
   const isAllSelected = spendings.length > 0 && selectedIds.size === spendings.length;
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
 
   return (
     <div className="max-w-5xl mx-auto pb-10">
@@ -165,22 +200,42 @@ export default function SpendingsPage() {
                       className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("date")}
+                  >
+                    <div className="flex items-center">
+                      Date <SortIcon field="date" />
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center">
+                      Description <SortIcon field="name" />
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("category_name")}
+                  >
+                    <div className="flex items-center">
+                      Category <SortIcon field="category_name" />
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
+                  <th
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort("amount")}
+                  >
+                    <div className="flex items-center justify-end">
+                      Amount <SortIcon field="amount" />
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {spendings.map((spending) => (
+                {sortedSpendings.map((spending) => (
                   <tr
                     key={spending.id}
                     className={`hover:bg-gray-50 ${selectedIds.has(spending.id) ? "bg-indigo-50/50" : ""}`}
