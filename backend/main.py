@@ -4,31 +4,33 @@ load_dotenv()
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import db
+from database import db_session, init_db
+from models import User, Category, Invoice
 import auth
 from werkzeug.security import generate_password_hash, check_password_hash
-from psycopg2.extras import RealDictCursor
 import os
 
 app = Flask(__name__)
+# Enable CORS for frontend
 CORS(
     app,
     resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}},
     supports_credentials=True,
 )
 
-DB_INITIALIZED = False
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
 
 
 # Init DB on start
-# In a real app, use migration tools like Alembic or Flask-Migrate
 @app.before_request
 def initialize():
-    global DB_INITIALIZED
-    if not DB_INITIALIZED:
+    if not getattr(app, "db_initialized", False):
         try:
-            db.init_db()
-            DB_INITIALIZED = True
+            init_db()
+            app.db_initialized = True
             print("Database initialized successfully.")
         except Exception as e:
             print(f"Error initializing database: {e}")
@@ -39,83 +41,66 @@ def health():
     return jsonify({"status": "ok"})
 
 
-@app.route("/auth/register", methods=["POST"])
-def register():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"message": "Username and password required"}), 400
-
-    hashed_password = generate_password_hash(password)
-
-    conn = None
-    cur = None
-    try:
-        conn = db.get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO users (username, password) VALUES (%s, %s) RETURNING id",
-            (username, hashed_password),
-        )
-        result = cur.fetchone()
-        if result:
-            user_id = result[0]
-            conn.commit()
-
-            token = auth.generate_token(user_id)
-            return jsonify({"token": token, "user_id": user_id}), 201
-        else:
-            conn.rollback()
-            return jsonify({"message": "Registration failed"}), 500
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(e)
-        return jsonify({"message": "User already exists or error"}), 400
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
-
-
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
 
-    conn = None
-    cur = None
-    try:
-        conn = db.get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
+    user = User.query.filter_by(username=username).first()
 
-        if user and check_password_hash(user["password"], password):
-            token = auth.generate_token(user["id"])
-            return jsonify({"token": token, "user_id": user["id"]})
-    except Exception as e:
-        print(e)
-        return jsonify({"message": "Database error"}), 500
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    if user and check_password_hash(user.password, password):
+        token = auth.generate_token(user.id)
+        return jsonify({"token": token, "user_id": user.id})
 
     return jsonify({"message": "Invalid credentials"}), 401
 
 
-@app.route("/api/protected", methods=["GET"])
+@app.route("/api/categories", methods=["GET", "POST"])
 @auth.token_required
-def protected(current_user_id):
-    return jsonify(
-        {"message": f"Hello user {current_user_id}, this is protected data."}
-    )
+def categories(current_user_id):
+    if request.method == "POST":
+        data = request.get_json()
+        name = data.get("name")
+        if not name:
+            return jsonify({"message": "Name is required"}), 400
+
+        new_category = Category(name=name, user_id=current_user_id)
+        db_session.add(new_category)
+        db_session.commit()
+        return jsonify(new_category.to_dict()), 201
+
+    else:
+        user_categories = Category.query.filter_by(user_id=current_user_id).all()
+        return jsonify([c.to_dict() for c in user_categories])
+
+
+@app.route("/api/invoices", methods=["POST"])
+@auth.token_required
+def upload_invoice(current_user_id):
+    if "file" not in request.files:
+        return jsonify({"message": "No file part"}), 400
+
+    file = request.files["file"]
+
+    if file.filename == "":
+        return jsonify({"message": "No selected file"}), 400
+
+    if file:
+        # Here we would process the file and save it
+        # For now, just save the metadata to DB
+        new_invoice = Invoice(filename=file.filename, user_id=current_user_id)
+        db_session.add(new_invoice)
+        db_session.commit()
+
+        # In a real app, save the file content to disk or S3
+
+        return jsonify(
+            {
+                "message": "Invoice uploaded successfully",
+                "invoice": new_invoice.to_dict(),
+            }
+        ), 201
 
 
 if __name__ == "__main__":

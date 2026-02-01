@@ -1,8 +1,25 @@
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth-context";
+import Layout from "./layout";
+import LoginPage from "./pages/login";
+import CategoriesPage from "./pages/categories";
+import ImportPage from "./pages/import";
 import { useState, useEffect } from "react";
 import { api } from "./api";
 import { cn } from "@/lib/utils";
 
-function App() {
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
+
+function Dashboard() {
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
@@ -24,21 +41,33 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-bold mb-4 text-gray-900">Kredit App</h1>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       <div className="p-6 border rounded-lg shadow-md bg-white">
-        <h2 className="text-xl font-semibold mb-2 text-gray-800">Backend Status</h2>
+        <h2 className="text-xl font-semibold mb-2 text-gray-800">System Status</h2>
         <p className={cn("text-gray-600", loading && "opacity-50")}>
           {message || "Checking..."}
         </p>
-        <button 
-          onClick={checkHealth}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors cursor-pointer"
-        >
-          Re-check
-        </button>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          
+          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="import" element={<ImportPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
