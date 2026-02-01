@@ -188,5 +188,68 @@ def get_spendings(current_user_id):
     return jsonify([s.to_dict() for s in spendings])
 
 
+@app.route("/api/spendings/<spending_id>", methods=["PATCH"])
+@auth.token_required
+def update_spending(current_user_id, spending_id):
+    data = request.get_json()
+    category_name = data.get("category_name")
+
+    if not category_name:
+        return jsonify({"message": "Category name is required"}), 400
+
+    spending = Spending.query.filter_by(id=spending_id, user_id=current_user_id).first()
+    if not spending:
+        return jsonify({"message": "Spending not found"}), 404
+
+    category = Category.query.filter_by(
+        name=category_name, user_id=current_user_id
+    ).first()
+    if not category:
+        return jsonify({"message": "Category not found"}), 404
+
+    spending.category_id = category.id
+    db_session.commit()
+
+    return jsonify(spending.to_dict()), 200
+
+
+@app.route("/api/spendings", methods=["PATCH"])
+@auth.token_required
+def update_spendings_bulk(current_user_id):
+    data = request.get_json()
+    spending_ids = data.get("spending_ids")
+    category_name = data.get("category_name")
+
+    if not spending_ids or not isinstance(spending_ids, list):
+        return jsonify({"message": "List of spending IDs is required"}), 400
+
+    if not category_name:
+        return jsonify({"message": "Category name is required"}), 400
+
+    category = Category.query.filter_by(
+        name=category_name, user_id=current_user_id
+    ).first()
+    if not category:
+        return jsonify({"message": "Category not found"}), 404
+
+    # Bulk update
+    try:
+        updated_count = Spending.query.filter(
+            Spending.id.in_(spending_ids), Spending.user_id == current_user_id
+        ).update({Spending.category_id: category.id}, synchronize_session=False)
+
+        db_session.commit()
+        return jsonify(
+            {
+                "message": f"Updated {updated_count} spendings",
+                "updated_count": updated_count,
+            }
+        ), 200
+    except Exception as e:
+        print(f"Error bulk updating spendings: {e}")
+        db_session.rollback()
+        return jsonify({"message": "Error updating spendings"}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

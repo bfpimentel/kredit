@@ -81,6 +81,10 @@ def process_invoice_with_gemini(file_content: bytes, user_id: int, invoice_id: i
         import_date = datetime.now(timezone.utc)
 
         for item in spendings_data:
+            amount = float(item["amount"])
+            if amount < 0:
+                continue
+
             category_name = item.get("category", "Other")
             category = next(
                 (c for c in user_categories if c.name == category_name), None
@@ -99,7 +103,7 @@ def process_invoice_with_gemini(file_content: bytes, user_id: int, invoice_id: i
                 id=str(uuid.uuid4()),
                 name=item["name"],
                 date=datetime.strptime(item["date"], "%Y-%m-%d").date(),
-                amount=float(item["amount"]),
+                amount=amount,
                 category_id=category_id,
                 import_date=import_date,
                 invoice_id=invoice_id,

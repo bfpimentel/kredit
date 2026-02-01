@@ -1,4 +1,4 @@
-import { LayoutDashboard, List, LogOut, Upload } from "lucide-react";
+import { CircleDollarSign, LayoutDashboard, List, LogOut, Upload } from "lucide-react";
 
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -17,7 +17,7 @@ export default function Layout() {
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
-    { name: "Spendings", path: "/spendings", icon: List },
+    { name: "Spendings", path: "/spendings", icon: CircleDollarSign },
     { name: "Categories", path: "/categories", icon: List },
     { name: "Import", path: "/import", icon: Upload },
   ];
