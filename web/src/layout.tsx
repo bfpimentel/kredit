@@ -17,6 +17,7 @@ export default function Layout() {
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
+    { name: "Spendings", path: "/spendings", icon: List },
     { name: "Categories", path: "/categories", icon: List },
     { name: "Import", path: "/import", icon: Upload },
   ];

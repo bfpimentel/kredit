@@ -52,7 +52,6 @@ def login():
     user = User.query.filter_by(username=username).first()
 
     if user and check_password_hash(user.password, password):
-        # Check if user has categories, if not create defaults
         if not user.categories:
             default_categories = [
                 "Food & Dining",
@@ -110,13 +109,12 @@ def delete_category(current_user_id, category_id):
     if category.name == "Other":
         return jsonify({"message": "Cannot delete 'Other' category"}), 403
 
-    # Check if there are spendings associated
     spendings_count = Spending.query.filter_by(category_id=category_id).count()
     if spendings_count > 0:
-        # Move spendings to 'Other'
         other_cat = Category.query.filter_by(
             user_id=current_user_id, name="Other"
         ).first()
+
         if other_cat:
             Spending.query.filter_by(category_id=category_id).update(
                 {"category_id": other_cat.id}
@@ -145,21 +143,22 @@ def upload_invoice(current_user_id):
     if file:
         file_content = file.read()
 
-        # Save invoice metadata
         new_invoice = Invoice(filename=file.filename, user_id=current_user_id)
+
         db_session.add(new_invoice)
         db_session.commit()
 
         try:
-            # Process with Gemini
+            saved_invoice = new_invoice.to_dict()
+
             processed_spendings = gemini_service.process_invoice_with_gemini(
-                file_content, current_user_id, new_invoice.id
+                file_content, current_user_id, int(saved_invoice.get("id"))
             )
 
             return jsonify(
                 {
                     "message": "Invoice processed successfully",
-                    "invoice": new_invoice.to_dict(),
+                    "invoice": saved_invoice,
                     "spendings_count": len(processed_spendings),
                 }
             ), 201
@@ -171,7 +170,7 @@ def upload_invoice(current_user_id):
 @app.route("/api/spendings", methods=["GET"])
 @auth.token_required
 def get_spendings(current_user_id):
-    month = request.args.get("month")  # Format YYYY-MM
+    month = request.args.get("month")
 
     query = Spending.query.filter_by(user_id=current_user_id)
 

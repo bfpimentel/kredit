@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Date
 from sqlalchemy.orm import relationship
 from database import Base
-import datetime
+from datetime import datetime, timezone
 
 
 class User(Base):
@@ -30,7 +30,7 @@ class Invoice(Base):
     __tablename__ = "invoices"
     id = Column(Integer, primary_key=True)
     filename = Column(String(255), nullable=False)
-    upload_date = Column(DateTime, default=datetime.datetime.utcnow)
+    upload_date = Column(DateTime, default=datetime.now(timezone.utc))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     user = relationship("User", backref="invoices")
@@ -46,14 +46,14 @@ class Invoice(Base):
 
 class Spending(Base):
     __tablename__ = "spendings"
-    id = Column(String(50), primary_key=True)  # Unique ID from frontend/gemini
+    id = Column(String(50), primary_key=True)
     name = Column(String(255), nullable=False)
     date = Column(Date, nullable=False)
     amount = Column(Float, nullable=False)
     category_id = Column(
         Integer, ForeignKey("categories.id"), nullable=True
-    )  # Can be null if "Other" isn't created yet or logic differs
-    import_date = Column(DateTime, default=datetime.datetime.utcnow)
+    )
+    import_date = Column(DateTime, default=datetime.now(timezone.utc))
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 

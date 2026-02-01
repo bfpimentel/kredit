@@ -49,7 +49,7 @@ def process_invoice_with_gemini(file_content: bytes, user_id: int, invoice_id: i
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             contents=[
                 genai.types.Content(
                     parts=[
@@ -67,11 +67,13 @@ def process_invoice_with_gemini(file_content: bytes, user_id: int, invoice_id: i
             response_text = response_text.strip()
         else:
             raise Exception("Empty response from Gemini")
-        # Clean up potential markdown formatting if Gemini still adds it
+
         if response_text.startswith("```json"):
             response_text = response_text[7:]
         if response_text.endswith("```"):
             response_text = response_text[:-3]
+
+        print(response_text)
 
         spendings_data = json.loads(response_text)
 
@@ -79,7 +81,6 @@ def process_invoice_with_gemini(file_content: bytes, user_id: int, invoice_id: i
         import_date = datetime.now(timezone.utc)
 
         for item in spendings_data:
-            # Find category ID
             category_name = item.get("category", "Other")
             category = next(
                 (c for c in user_categories if c.name == category_name), None

@@ -51,7 +51,7 @@ export default function ImportPage() {
               onChange={handleFileChange}
               className="hidden"
               id="file-upload"
-              accept=".csv,.pdf,.txt" // Adjust based on supported formats
+              accept=".csv,.pdf,.txt"
             />
             <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center justify-center">
               <div className="text-gray-600 mb-2">{file ? file.name : "Click to select a file or drag and drop"}</div>
