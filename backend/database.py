@@ -13,20 +13,22 @@ DB_PORT = os.environ.get("DB_PORT", "5432")
 
 # Check if password is empty
 if DB_PASSWORD:
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = (
+        f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    )
 else:
-    DATABASE_URL = f"postgresql://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = f"postgresql+psycopg2://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DATABASE_URL)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
 
-SQLAlchemy = declarative_base()
-SQLAlchemy.query = db_session.query_property()
+Base = declarative_base()
+Base.query = db_session.query_property()
 
 
 def init_db():
     import models
 
-    SQLAlchemy.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
