@@ -1,12 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { type ReactElement, useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+
+import { api } from "@/api";
 import { AuthProvider, useAuth } from "@/auth-context";
 import Layout from "@/layout";
-import LoginPage from "@/pages/login";
+import { cn } from "@/lib/utils";
 import CategoriesPage from "@/pages/categories";
 import ImportPage from "@/pages/import";
-import { useState, useEffect, type ReactElement } from "react";
-import { api } from "@/api";
-import { cn } from "@/lib/utils";
+import LoginPage from "@/pages/login";
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
   const { isAuthenticated } = useAuth();

@@ -1,7 +1,8 @@
-import { useState, type SubmitEvent } from "react";
-import { useAuth } from "@/auth-context";
-import { api } from "@/api";
+import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { api } from "@/api";
+import { useAuth } from "@/auth-context";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -10,14 +11,14 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: SubmitEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     try {
       const response = await api.post("/auth/login", { username, password });
       login(response.data.token, response.data.user_id);
       navigate("/");
-    } catch (err) {
+    } catch {
       setError("Invalid credentials");
     }
   };
